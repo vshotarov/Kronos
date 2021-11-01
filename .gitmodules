@@ -1,0 +1,3 @@
+[submodule "wake_word_detection"]
+	path = wake_word_detection
+	url = git@github.com:vshotarov/Kronos_wake-word-detection.git
