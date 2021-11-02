@@ -3,7 +3,7 @@
 	url = git@github.com:vshotarov/Kronos_wake-word-detection.git
 [submodule "speech_recognition"]
 	path = speech_recognition
-	url = git@github.com:/vshotarov/Kronos_speech-recognition
+	url = git@github.com:vshotarov/Kronos_speech-recognition.git
 [submodule "intent_and_slot_inference"]
 	path = intent_and_slot_inference
-	url = git@github.com:/vshotarov/Kronos_intent-and-slot-inference
+	url = git@github.com:vshotarov/Kronos_intent-and-slot-inference.git
