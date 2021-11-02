@@ -3,3 +3,5 @@ venv/
 *.swp
 *.pyc
 __pycache__
+data/
+*.torch
