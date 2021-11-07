@@ -5,9 +5,36 @@ import re
 import requests
 import urllib.parse
 import json
+from timezonefinder import TimezoneFinder
+import pytz
 
 
 HOME_LOCATION_WOEID = 44418 # London
+HOME_LOCATION_LATLONG = 51, 0
+
+timezone_finder = TimezoneFinder()
+
+def get_location_latlong(slots):
+    if "location" not in slots.keys():
+        return HOME_LOCATION_LATLONG, "London"
+    else:
+        # Bit weird to use a different api for this, but the metaweather one
+        # seems to be a one man operation and i don't want to use it if i can help it
+        request = requests.get("https://nominatim.openstreetmap.org/search?%s&format=json" % (
+            urllib.parse.urlencode({"q":slots["location"]})))
+
+        location_info = json.loads(request.text)
+
+        if location_info:
+            return (float(location_info[0]["lat"]), float(location_info[0]["lon"])),\
+                location_info[0]["display_name"].split(",")[0]
+
+        print("Error in intent_handler.get_location_latlong: "
+              "Unrecognized location %s" % slots["location"])
+        return None, None
+
+def get_timezone_from_latlong(latlong):
+    return timezone_finder.timezone_at(lat=latlong[0], lng=latlong[1])
 
 def get_location_info(location):
     request = requests.get("https://www.metaweather.com/api/location/search/?%s" %\
@@ -20,7 +47,7 @@ def get_location_woeid(slots):
     else:
         location_info = get_location_info(slots["location"])
         if not location_info:
-            print("Error in IntentHandler.weather_current: "
+            print("Error in intent_handler.get_location_woeid: "
                   "Unrecognized location %s" % slots["location"])
             return None, None
 
@@ -127,11 +154,15 @@ class IntentHandler(object):
 
     @staticmethod
     def time_current(slots):
-        if "location" in slots.keys() and slots["location"] != "london":
-            print("Error in IntentHandler.time_current: time_current currently does not accept locations")
+        latlong, location_name = get_location_latlong(slots)
+
+        if not latlong:
             return
 
-        return "The current time in London is " + datetime.now().strftime("%H:%M")
+        timezone = pytz.timezone(get_timezone_from_latlong(latlong))
+
+        return "The current time in %s is %s" % (location_name,
+                    datetime.now(timezone).strftime("%H:%M"))
 
     @staticmethod
     def time_timer(slots):
@@ -140,6 +171,3 @@ class IntentHandler(object):
     @staticmethod
     def other(slots):
         print("Unrecognized command")
-
-if __name__ == "__main__":
-    IntentHandler.weather_current({})
