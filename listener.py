@@ -21,8 +21,10 @@ def _load_model(model_class, state_dict_path, *args, **kwargs):
 class Listener(object):
     def __init__(self, wake_word_model_state_path, speech_recognition_model_state_path,
             intent_inference_model_state_path, slot_filling_model_state_path,
-            language_model_path, wake_notification_wav_path, intent_handler):
+            language_model_path, wake_notification_wav_path, intent_handler,
+            synthesize_func=None):
         self.intent_handler = intent_handler
+        self.synthesize_func = synthesize_func
 
         self.pyaudio = pyaudio.PyAudio()
         self.stream = self.pyaudio.open(
@@ -217,7 +219,13 @@ class Listener(object):
                   "The intent %s doesn't have a handler." % intent)
             return
 
-        handler(slots)
+        response = handler(slots)
+
+        if response:
+            if self.synthesize_func:
+                self.synthesize_func(response)
+            else:
+                print("Kronos:", response)
 
     def cleanup(self):
         pass

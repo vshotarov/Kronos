@@ -16,8 +16,15 @@ if __name__ == "__main__":
         help="path to the language model")
     parser.add_argument("wake_notification_wav_path",
         help="path to the wave file to play upon waking up")
+    parser.add_argument("-uvs", "--use_voice_synthesis", action="store_true",
+        help="whether or not to use the voice_synthesis.py to synthesize responses")
 
     parsed_args = parser.parse_args()
+
+    synthesize_func = None
+    if parsed_args.use_voice_synthesis:
+        import voice_synthesizer
+        synthesize_func = voice_synthesizer.synthesize
 
     Listener(parsed_args.trained_wake_word_model_path,
         parsed_args.trained_speech_recognition_model_path,
@@ -25,4 +32,4 @@ if __name__ == "__main__":
         parsed_args.trained_slot_filling_model_path,
         parsed_args.language_model_path,
         parsed_args.wake_notification_wav_path,
-        IntentHandler()).start()
+        IntentHandler(), synthesize_func).start()
