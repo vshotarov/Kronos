@@ -7,12 +7,38 @@ import urllib.parse
 import json
 from timezonefinder import TimezoneFinder
 import pytz
+import threading
+import time
+import wave
+import pyaudio
+from functools import partial
 
 
 HOME_LOCATION_WOEID = 44418 # London
 HOME_LOCATION_LATLONG = 51, 0
+TIMER_WAV_FILE_PATH = "data/timer.wav"
 
 timezone_finder = TimezoneFinder()
+p = pyaudio.PyAudio()
+threads = []
+
+def timer(delay_in_seconds):
+    time.sleep(delay_in_seconds)
+
+    wf = wave.open(TIMER_WAV_FILE_PATH)
+    stream = p.open(
+        format=pyaudio.get_format_from_width(wf.getsampwidth()),
+        channels=wf.getnchannels(),
+        rate=wf.getframerate(),
+        output=True)
+
+    data = wf.readframes(1024)
+    while data:
+        stream.write(data)
+        data = wf.readframes(1024)
+
+    stream.close()
+    wf.close()
 
 def get_location_latlong(slots):
     if "location" not in slots.keys():
@@ -166,7 +192,28 @@ class IntentHandler(object):
 
     @staticmethod
     def time_timer(slots):
-        pass
+        global threads
+        for thread in threads:
+            if thread.is_alive():
+                print("Error in IntentHandler.time_timer: There's already a timer running")
+                return
+        threads = []
+
+        if not "time" in slots.keys():
+            print("Error in IntentHandler.time_timer: No time slot was provided")
+            return
+
+        future_time_delta = interpret_time_delta(slots["time"])
+
+        if not future_time_delta:
+            print("Error in IntentHandler.time_timer: "
+                "Could not interpret time %s" % slots["time"])
+            return
+
+        time_in_seconds = future_time_delta.total_seconds()
+
+        threads.append(threading.Thread(target=partial(timer, time_in_seconds)))
+        threads[-1].start()
 
     @staticmethod
     def other(slots):
