@@ -164,8 +164,11 @@ class Listener(object):
 
                 # Strip the first few frames, as otherwise we pick up some of the
                 # wake word and also the wake notification
-                self.speech_buffer = self.speech_buffer[
-                    int((self.wake_notification_wave_duration) * 8000):]
+                # NOTE: It appears that just zeroing out those samples rather than
+                # cutting them outright helps with the speech recognition, presumably
+                # because most of my recorded samples have a bit of a gap in the beginning
+                self.speech_buffer[
+                    :int((self.wake_notification_wave_duration*.75) * 8000)] *= 0
 
                 # Normalize gain
                 normalized_speech_buffer, _ = torchaudio.sox_effects.apply_effects_tensor(
