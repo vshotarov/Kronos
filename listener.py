@@ -9,7 +9,7 @@ from wake_word_detection.data import Preprocessor as WakeWordPreprocessor
 from speech_recognition.model import STTModel as SpeechRecognitionModel
 from speech_recognition.data import Preprocessor as SpeechRecognitionPreprocessor,\
     LanaguageModelDecoder
-from intent_and_slot_inference.main import getIntentAndSlotModels, inferIntentAndSlots
+from intent_and_slot_inference.model import JointIntentAndSlotsModel
 
 
 def _load_model(model_class, state_dict_path, *args, **kwargs):
@@ -20,9 +20,8 @@ def _load_model(model_class, state_dict_path, *args, **kwargs):
 
 class Listener(object):
     def __init__(self, wake_word_model_state_path, speech_recognition_model_state_path,
-            intent_inference_model_state_path, slot_filling_model_state_path,
-            language_model_path, wake_notification_wav_path, intent_handler,
-            synthesize_func=None):
+            joint_intent_and_slot_model_state_path, language_model_path,
+            wake_notification_wav_path, intent_handler, synthesize_func=None):
         self.intent_handler = intent_handler
         self.synthesize_func = synthesize_func
 
@@ -36,8 +35,8 @@ class Listener(object):
             WakeWordDetectionModel, wake_word_model_state_path)
         self.speech_recognition_model = _load_model(
             SpeechRecognitionModel, speech_recognition_model_state_path)
-        self.intent_and_slot_models = getIntentAndSlotModels(
-            intent_inference_model_state_path, slot_filling_model_state_path)
+        self.joint_intent_and_slot_model = _load_model(
+            JointIntentAndSlotsModel, joint_intent_and_slot_model_state_path)
 
         self.wake_word_preprocessor = WakeWordPreprocessor()
         self.speech_recognition_preprocessor = SpeechRecognitionPreprocessor()
@@ -191,8 +190,8 @@ class Listener(object):
                 most_confident_result = None
                 most_confident_slots = []
                 for result in top_language_model_results:
-                    confidence, intent, slots = inferIntentAndSlots(
-                        result, self.intent_and_slot_models)
+                    confidence, intent, slots = self.joint_intent_and_slot_model.\
+                        inferIntentAndSlots(result)
 
                     if confidence > highest_confidence:
                         highest_confidence = confidence
@@ -239,5 +238,5 @@ if __name__ == "__main__":
             return lambda x: print(x)
 
     Listener("data/wake_word_model_state.torch","data/speech_model_state.torch",
-           "data/intent_model_state.torch","data/slot_model_state.torch",
-           "data/language_model.arpa","data/wake.wav",DummyIntentHandler()).start()
+           "data/joint_intent_and_slot_model_state.torch","data/language_model.arpa",
+           "data/wake.wav",DummyIntentHandler()).start()
