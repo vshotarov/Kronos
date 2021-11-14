@@ -1,4 +1,4 @@
-#Kronos
+# Kronos
 A small personal virtual assistant, built and trained from scratch with the exception of using a pretrained BERT as the backbone of intent inference and slot filling. Additionally, IBM's Watson is optionally used to give voice to the responses.
 
 ## Table of Contents
